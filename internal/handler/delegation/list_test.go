@@ -1,5 +1,5 @@
 //go:generate mockery
-package handler
+package delegation
 
 import (
 	"net/http"
@@ -10,7 +10,7 @@ import (
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/mock"
 
-	"kiln-exercice/internal/handler/mocks"
+	"kiln-exercice/internal/handler/delegation/mocks"
 	delegationlist "kiln-exercice/internal/usecase/delegation/list"
 	"kiln-exercice/pkg/api"
 	"kiln-exercice/pkg/http/apitest"

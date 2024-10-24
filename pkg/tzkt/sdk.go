@@ -44,7 +44,7 @@ func (s *SDK) GetDelegations(ctx context.Context, from, to time.Time) (delegatio
 		limit       = 10000
 	)
 
-	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, 45*time.Second)
 	defer cancel()
 
 	for {
@@ -54,8 +54,8 @@ func (s *SDK) GetDelegations(ctx context.Context, from, to time.Time) (delegatio
 			SetError(&resultError).
 			SetQueryParams(
 				map[string]string{
-					"timestamp.ge": from.Format(time.DateOnly),
-					"timestamp.lt": to.Format(time.DateOnly),
+					"timestamp.ge": from.Format(time.RFC3339),
+					"timestamp.lt": to.Format(time.RFC3339),
 					"offset":       strconv.Itoa(offset),
 					"limit":        strconv.Itoa(limit),
 				},
@@ -70,7 +70,6 @@ func (s *SDK) GetDelegations(ctx context.Context, from, to time.Time) (delegatio
 
 			return result, err
 		}
-		fmt.Println(resp.Request.URL)
 
 		if !resp.IsSuccess() {
 			return result, fmt.Errorf("unexpected status code: %d", resp.StatusCode())

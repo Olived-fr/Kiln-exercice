@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/rs/zerolog/log"
+
 	"kiln-exercice/internal/model"
 	"kiln-exercice/pkg/tzkt"
 	"kiln-exercice/pkg/worker"
@@ -45,6 +47,8 @@ func NewUseCase(delegationRepo DelegationRepository, pollingRepo PollingReposito
 	}
 }
 
+// PollDelegations polls delegations from the XTZSDK and inserts them into the database.
+// It uses a worker pool to fetch delegations in parallel.
 func (uc *UseCase) PollDelegations(ctx context.Context) error {
 	from := uc.DefaultPollingFrom
 
@@ -63,7 +67,6 @@ func (uc *UseCase) PollDelegations(ctx context.Context) error {
 	if numWorkers <= 1 {
 		numWorkers = 1
 	}
-	fmt.Println("numWorkers", numWorkers)
 
 	delegationsCh := make(chan []model.Delegation, numWorkers)
 	defer close(delegationsCh)
@@ -81,7 +84,6 @@ func (uc *UseCase) PollDelegations(ctx context.Context) error {
 	)
 	for i := 0; i < numWorkers; i++ {
 		result := pool.GetResult()
-		fmt.Println("result", len(result.Output.([]model.Delegation)), result.Err)
 		if result.Err != nil {
 			errs = append(errs, result.Err)
 		}
@@ -94,22 +96,24 @@ func (uc *UseCase) PollDelegations(ctx context.Context) error {
 	pool.Stop()
 
 	if len(errs) > 0 {
-		errors.Join(errs...)
+		return errors.Join(errs...)
 	}
+
+	polling.LastPolledAt = to
 
 	if len(delegations) == 0 {
-		return nil
+		return uc.PollingRepo.UpsertPolling(ctx, polling)
 	}
 
-	fmt.Println("inserting delegations", len(delegations))
 	if err = uc.DelegationRepo.InsertDelegations(ctx, delegations); err != nil {
 		return fmt.Errorf("insert delegations: %w", err)
 	}
 
-	polling.LastPolledAt = to
 	if err = uc.PollingRepo.UpsertPolling(ctx, polling); err != nil {
 		return fmt.Errorf("upsert polling: %w", err)
 	}
+
+	log.Info().Msgf("delegations poilling completed successfully: %d inserted", len(delegations))
 
 	return nil
 }
@@ -125,6 +129,7 @@ func (uc *UseCase) fetchDelegations(ctx context.Context, input any) (any, error)
 	if to.After(uc.TimeNow()) {
 		to = uc.TimeNow()
 	}
+
 	delegations, err := uc.XTZSDK.GetDelegations(ctx, from, to)
 	if err != nil {
 		return []model.Delegation{}, fmt.Errorf("sdk get delegations: %w", err)

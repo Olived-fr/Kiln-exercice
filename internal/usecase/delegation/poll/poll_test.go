@@ -63,7 +63,7 @@ func TestUseCase_PollDelegations(t *testing.T) {
 				DelegationRepo: mocks.NewDelegationRepository(t),
 				PollingRepo:    mocks.NewPollingRepository(t),
 				XTZSDK:         mocks.NewXTZSDK(t),
-				PollingFrom:    time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC).UTC(),
+				PollingFrom:    time.Date(2020, 9, 23, 0, 0, 0, 0, time.UTC).UTC(),
 				TimeNow:        time.Date(2021, 1, 11, 0, 0, 0, 0, time.UTC).UTC,
 			},
 			init: func(e *env) {
@@ -161,7 +161,7 @@ func TestUseCase_PollDelegations(t *testing.T) {
 						},
 					),
 					lastPolling.LastPolledAt,
-					lastPolling.LastPolledAt.Add(pollingDaysByWorker*24*time.Hour),
+					e.TimeNow(),
 				).Return(
 					[]tzkt.Delegation{
 						{
@@ -202,6 +202,50 @@ func TestUseCase_PollDelegations(t *testing.T) {
 						},
 					},
 				).Return(nil)
+				e.PollingRepo.EXPECT().UpsertPolling(
+					mock.MatchedBy(
+						func(_ context.Context) bool { return true },
+					),
+					model.Polling{
+						ID:           1,
+						LastPolledAt: e.TimeNow(),
+					},
+				).Return(nil)
+			},
+			wantErr: false,
+		},
+		{
+			name: "no new delegations",
+			env: env{
+				DelegationRepo: mocks.NewDelegationRepository(t),
+				PollingRepo:    mocks.NewPollingRepository(t),
+				XTZSDK:         mocks.NewXTZSDK(t),
+				PollingFrom:    time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC).UTC(),
+				TimeNow:        time.Date(2021, 1, 11, 0, 0, 0, 0, time.UTC).UTC,
+			},
+			init: func(e *env) {
+				lastPolling := model.Polling{
+					ID:           1,
+					LastPolledAt: time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC).UTC(),
+				}
+				e.PollingRepo.EXPECT().GetLastPolling(
+					mock.MatchedBy(
+						func(_ context.Context) bool {
+							return true
+						},
+					),
+				).Return(lastPolling, nil)
+				e.XTZSDK.EXPECT().GetDelegations(
+					mock.MatchedBy(
+						func(_ context.Context) bool {
+							return true
+						},
+					),
+					lastPolling.LastPolledAt,
+					e.TimeNow(),
+				).Return(
+					[]tzkt.Delegation{}, nil,
+				)
 				e.PollingRepo.EXPECT().UpsertPolling(
 					mock.MatchedBy(
 						func(_ context.Context) bool { return true },

@@ -15,7 +15,7 @@ import (
 	"github.com/rs/zerolog/log"
 	"golang.org/x/sync/errgroup"
 
-	httphandler "kiln-exercice/internal/handler"
+	httphandler "kiln-exercice/internal/handler/delegation"
 	pgrepo "kiln-exercice/internal/pg"
 	"kiln-exercice/internal/usecase/delegation/list"
 	"kiln-exercice/pkg/pg"

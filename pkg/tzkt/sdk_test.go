@@ -56,13 +56,13 @@ func TestSDK_GetDelegations(t *testing.T) {
 				func(w http.ResponseWriter, r *http.Request) {
 					assert.Equal(t, http.MethodGet, r.Method)
 					assert.Equal(t, "/v1/operations/delegations", r.URL.Path)
-					assert.Equal(t, "2021-01-01", r.URL.Query().Get("timestamp.ge"))
-					assert.Equal(t, "2021-01-11", r.URL.Query().Get("timestamp.lt"))
+					assert.Equal(t, "2021-01-01T00:00:00Z", r.URL.Query().Get("timestamp.ge"))
+					assert.Equal(t, "2021-01-11T00:00:00Z", r.URL.Query().Get("timestamp.lt"))
 					assert.Equal(t, "10000", r.URL.Query().Get("limit"))
 
 					var body []byte
 					switch r.URL.Query().Get("offset") {
-					case "1000":
+					case "10000":
 						body = []byte(`[]`)
 					case "0":
 						body = []byte(`[

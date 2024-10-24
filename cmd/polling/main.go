@@ -23,7 +23,7 @@ type Parameters struct {
 	TzktURL                string    `env:"TZKT_URL" env-default:"https://api.tzkt.io"`
 	PollingIntervalSeconds int       `env:"POLLING_INTERVAL_SECONDS" env-default:"10"`
 	DefaultPollingFrom     time.Time `env:"DEFAULT_POLLING_FROM" env-layout:"2006-01-02" env-default:"2018-01-01"`
-	PollingBatchSize       int       `env:"POLLING_BATCH_SIZE" env-default:"1000"`
+	PollingBatchSize       int       `env:"POLLING_BATCH_SIZE" env-default:"10000"`
 }
 
 func main() {
